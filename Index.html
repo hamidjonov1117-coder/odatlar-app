@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Odatlar — Kunlik Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#F7F3FF;--card:#fff;--radius:20px;--shadow:0 8px 30px rgba(0,0,0,0.08);
+  --p:#7C3AED;--p2:#A855F7;
+  --theme-a:#7C3AED;--theme-b:#A855F7;
+}
+body{font-family:'Nunito',sans-serif;background:var(--bg);min-height:100vh;display:flex;justify-content:center;}
+.phone{width:100%;max-width:390px;min-height:100vh;background:var(--bg);position:relative;overflow:hidden;padding-bottom:90px;}
+
+.screen{display:none;animation:fadeIn 0.3s ease;}
+.screen.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* TOPBAR */
+.topbar{background:linear-gradient(135deg,var(--theme-a),var(--theme-b));padding:52px 24px 28px;position:relative;overflow:hidden;}
+.topbar::before{content:'';position:absolute;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.08);top:-60px;right:-60px;}
+.topbar::after{content:'';position:absolute;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.06);bottom:-30px;left:30px;}
+.topbar-row{display:flex;justify-content:space-between;align-items:flex-start;position:relative;}
+.greeting{color:rgba(255,255,255,0.75);font-size:13px;font-weight:600;margin-bottom:4px;}
+.username{color:#fff;font-size:24px;font-weight:900;}
+.streak-badge{background:rgba(255,255,255,0.2);border:1.5px solid rgba(255,255,255,0.3);border-radius:100px;padding:6px 14px;display:flex;align-items:center;gap:6px;color:#fff;font-size:13px;font-weight:800;}
+.progress-section{margin-top:20px;position:relative;}
+.progress-label{display:flex;justify-content:space-between;color:rgba(255,255,255,0.8);font-size:12px;font-weight:700;margin-bottom:8px;}
+.progress-bar-bg{height:10px;background:rgba(255,255,255,0.2);border-radius:100px;overflow:hidden;}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,#FDE68A,#FCD34D);border-radius:100px;transition:width 0.6s cubic-bezier(.4,0,.2,1);position:relative;}
+.progress-bar-fill::after{content:'';position:absolute;right:0;top:50%;transform:translate(50%,-50%);width:16px;height:16px;background:#FCD34D;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.2);}
+
+/* WEEKLY GOAL BAR */
+.weekly-goal-bar{margin:0 16px 0;background:var(--card);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;}
+.wg-icon{font-size:24px;}
+.wg-info{flex:1;}
+.wg-title{font-size:13px;font-weight:800;color:#1F1535;display:flex;justify-content:space-between;}
+.wg-title span{color:var(--theme-a);font-size:12px;}
+.wg-bg{height:7px;background:#F3F4F6;border-radius:100px;overflow:hidden;margin-top:6px;}
+.wg-fill{height:100%;background:linear-gradient(90deg,var(--theme-a),var(--theme-b));border-radius:100px;transition:width 0.6s;}
+
+/* DATE ROW */
+.date-row{padding:14px 24px 8px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;}
+.date-row::-webkit-scrollbar{display:none;}
+.date-chip{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:44px;padding:10px 8px;border-radius:16px;cursor:pointer;transition:all 0.2s;flex-shrink:0;}
+.date-chip .day-name{font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.5px;}
+.date-chip .day-num{font-size:18px;font-weight:900;color:#374151;}
+.date-chip.active{background:linear-gradient(135deg,var(--theme-a),var(--theme-b));box-shadow:0 6px 20px rgba(124,58,237,0.35);}
+.date-chip.active .day-name,.date-chip.active .day-num{color:#fff;}
+.date-chip.has-dot::after{content:'';width:5px;height:5px;border-radius:50%;background:#10B981;}
+
+/* MOTIVATION BANNER */
+.motivation-card{margin:10px 16px 12px;border-radius:var(--radius);padding:14px 18px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden;cursor:pointer;}
+.motivation-card::before{content:'';position:absolute;inset:0;opacity:0.15;}
+.motivation-icon{font-size:26px;flex-shrink:0;}
+.motivation-text{font-size:13px;font-weight:700;line-height:1.5;flex:1;}
+.motivation-next{font-size:18px;color:inherit;opacity:0.5;}
+
+/* SECTION TITLE */
+.section-title{padding:12px 24px 10px;display:flex;justify-content:space-between;align-items:center;}
+.section-title h2{font-size:18px;font-weight:900;color:#1F1535;}
+.add-btn{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--theme-a),var(--theme-b));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;box-shadow:0 4px 14px rgba(124,58,237,0.4);transition:transform 0.2s;}
+.add-btn:hover{transform:scale(1.1) rotate(90deg);}
+
+/* HABIT CARDS */
+.habits-list{padding:0 16px;display:flex;flex-direction:column;gap:10px;}
+.habit-card{background:var(--card);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);cursor:pointer;transition:transform 0.2s;position:relative;overflow:hidden;user-select:none;}
+.habit-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;border-radius:20px 0 0 20px;}
+.habit-card:active{transform:scale(0.97);}
+.habit-card.done{background:linear-gradient(135deg,#F0FDF4,#DCFCE7);}
+.habit-icon-wrap{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.habit-info{flex:1;}
+.habit-name{font-size:15px;font-weight:800;color:#1F1535;margin-bottom:3px;}
+.habit-card.done .habit-name{text-decoration:line-through;color:#9CA3AF;}
+.habit-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.habit-streak{font-size:11px;font-weight:700;color:#6B7280;}
+.habit-time{font-size:11px;color:#9CA3AF;font-weight:600;background:#F3F4F6;padding:2px 8px;border-radius:100px;}
+.check-btn{width:34px;height:34px;border-radius:50%;border:2.5px solid #E5E7EB;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.3s;}
+.check-btn svg{opacity:0;transform:scale(0);transition:all 0.25s;}
+.habit-card.done .check-btn{border:none;}
+.habit-card.done .check-btn svg{opacity:1;transform:scale(1);}
+
+.c-purple .habit-card::before{background:#7C3AED;} .c-purple .habit-icon-wrap{background:#EDE9FE;} .c-purple .check-btn{border-color:#7C3AED;} .c-purple.done .check-btn{background:#7C3AED;}
+.c-pink   .habit-card::before{background:#EC4899;} .c-pink   .habit-icon-wrap{background:#FCE7F3;} .c-pink   .check-btn{border-color:#EC4899;} .c-pink.done   .check-btn{background:#EC4899;}
+.c-orange .habit-card::before{background:#F97316;} .c-orange .habit-icon-wrap{background:#FFEDD5;} .c-orange .check-btn{border-color:#F97316;} .c-orange.done .check-btn{background:#F97316;}
+.c-green  .habit-card::before{background:#10B981;} .c-green  .habit-icon-wrap{background:#D1FAE5;} .c-green  .check-btn{border-color:#10B981;} .c-green.done  .check-btn{background:#10B981;}
+.c-blue   .habit-card::before{background:#3B82F6;} .c-blue   .habit-icon-wrap{background:#DBEAFE;} .c-blue   .check-btn{border-color:#3B82F6;} .c-blue.done   .check-btn{background:#3B82F6;}
+.c-yellow .habit-card::before{background:#F59E0B;} .c-yellow .habit-icon-wrap{background:#FEF3C7;} .c-yellow .check-btn{border-color:#F59E0B;} .c-yellow.done .check-btn{background:#F59E0B;}
+
+/* CONFETTI */
+.confetti-piece{position:fixed;width:10px;height:10px;border-radius:2px;pointer-events:none;z-index:9999;animation:confettiFall 1s ease-in forwards;}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(300px) rotate(720deg);opacity:0;}}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:390px;background:#fff;border-top:1px solid #F3F4F6;display:flex;padding:10px 0 20px;box-shadow:0 -8px 30px rgba(0,0,0,0.06);z-index:50;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:4px;border:none;background:none;transition:transform 0.2s;}
+.nav-item:active{transform:scale(0.9);}
+.nav-icon{font-size:20px;}
+.nav-label{font-size:10px;font-weight:700;color:#9CA3AF;letter-spacing:0.3px;}
+.nav-item.active .nav-label{color:var(--theme-a);}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:var(--theme-a);margin:0 auto;}
+
+/* PAGE HEADER */
+.page-header{padding:52px 24px 28px;position:relative;overflow:hidden;}
+.page-header::before{content:'';position:absolute;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.1);top:-50px;right:-50px;}
+.page-header h1{color:#fff;font-size:24px;font-weight:900;margin-top:4px;}
+.page-header p{color:rgba(255,255,255,0.8);font-size:13px;font-weight:600;margin-top:4px;}
+.page-header .ph-label{color:rgba(255,255,255,0.8);font-size:13px;font-weight:700;}
+
+/* ═══ STATS PAGE ═══ */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px 16px 0;}
+.stat-card{background:var(--card);border-radius:18px;padding:18px;box-shadow:var(--shadow);text-align:center;}
+.stat-card.wide{grid-column:span 2;display:flex;align-items:center;justify-content:space-between;}
+.stat-card .big-num{font-size:32px;font-weight:900;line-height:1;}
+.stat-card .big-label{font-size:12px;font-weight:700;color:#6B7280;margin-top:4px;}
+
+.week-chart{background:var(--card);border-radius:18px;padding:18px;margin:12px 16px 0;box-shadow:var(--shadow);}
+.week-chart h3{font-size:15px;font-weight:900;color:#1F1535;margin-bottom:14px;}
+.bars{display:flex;align-items:flex-end;gap:8px;height:80px;}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;}
+.bar{width:100%;border-radius:6px 6px 0 0;transition:height 0.6s cubic-bezier(.4,0,.2,1);min-height:4px;}
+.bar-label{font-size:10px;font-weight:700;color:#9CA3AF;}
+
+.hp-section{padding:12px 16px 0;}
+.hp-section h3{font-size:15px;font-weight:900;color:#1F1535;margin-bottom:10px;}
+.hp-item{background:var(--card);border-radius:14px;padding:13px 15px;box-shadow:var(--shadow);margin-bottom:9px;}
+.hp-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+.hp-name{font-size:13px;font-weight:800;color:#1F1535;display:flex;align-items:center;gap:7px;}
+.hp-pct{font-size:13px;font-weight:900;}
+.hp-bar-bg{height:7px;background:#F3F4F6;border-radius:100px;overflow:hidden;}
+.hp-bar-fill{height:100%;border-radius:100px;transition:width 0.8s cubic-bezier(.4,0,.2,1);}
+
+/* ═══ ACHIEVEMENTS PAGE ═══ */
+.level-card{margin:12px 16px 0;background:linear-gradient(135deg,#4F46E5,#7C3AED);border-radius:18px;padding:20px;color:#fff;box-shadow:0 8px 28px rgba(79,70,229,0.35);}
+.level-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.level-title{font-size:13px;font-weight:700;opacity:0.8;}
+.level-num{font-size:26px;font-weight:900;}
+.level-bar-bg{height:10px;background:rgba(255,255,255,0.2);border-radius:100px;overflow:hidden;}
+.level-bar-fill{height:100%;background:linear-gradient(90deg,#FDE68A,#FCD34D);border-radius:100px;}
+.level-sub{font-size:11px;opacity:0.7;margin-top:6px;font-weight:600;}
+
+.ach-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:12px 16px;}
+.ach-card{background:var(--card);border-radius:18px;padding:16px 12px;box-shadow:var(--shadow);text-align:center;transition:transform 0.2s;}
+.ach-card.locked{opacity:0.4;filter:grayscale(0.8);}
+.ach-card:not(.locked):hover{transform:scale(1.03);}
+.ach-icon{font-size:34px;margin-bottom:7px;}
+.ach-name{font-size:12px;font-weight:900;color:#1F1535;margin-bottom:3px;}
+.ach-desc{font-size:11px;color:#9CA3AF;font-weight:600;line-height:1.4;}
+.ach-badge{display:inline-block;margin-top:7px;padding:3px 10px;border-radius:100px;font-size:10px;font-weight:800;}
+.ach-badge.earned{background:#D1FAE5;color:#065F46;}
+.ach-badge.locked-b{background:#F3F4F6;color:#9CA3AF;}
+
+/* FRIENDS LEADERBOARD */
+.friends-section{padding:0 16px 12px;}
+.friends-section h3{font-size:15px;font-weight:900;color:#1F1535;margin-bottom:10px;}
+.friend-row{background:var(--card);border-radius:14px;padding:13px 15px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);margin-bottom:9px;}
+.friend-rank{font-size:18px;font-weight:900;width:28px;text-align:center;}
+.friend-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.friend-info{flex:1;}
+.friend-name{font-size:14px;font-weight:800;color:#1F1535;}
+.friend-streak{font-size:12px;color:#6B7280;font-weight:600;}
+.friend-score{font-size:16px;font-weight:900;color:var(--theme-a);}
+.friend-row.me{background:linear-gradient(135deg,#EDE9FE,#F5F3FF);border:1.5px solid var(--theme-a);}
+
+/* ═══ PROFILE PAGE ═══ */
+.profile-header{background:linear-gradient(135deg,#10B981,#34D399);padding:52px 24px 36px;text-align:center;position:relative;overflow:hidden;}
+.profile-header::before{content:'';position:absolute;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.08);top:-60px;right:-60px;}
+.avatar{width:84px;height:84px;border-radius:50%;background:#fff;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:38px;box-shadow:0 8px 24px rgba(0,0,0,0.15);position:relative;}
+.avatar-edit{position:absolute;bottom:0;right:0;width:26px;height:26px;background:#10B981;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;}
+.profile-name{color:#fff;font-size:22px;font-weight:900;}
+.profile-handle{color:rgba(255,255,255,0.75);font-size:13px;font-weight:600;margin-top:2px;}
+
+.profile-stats{display:grid;grid-template-columns:repeat(3,1fr);background:#fff;border-bottom:1px solid #F3F4F6;}
+.pstat{padding:16px 8px;text-align:center;}
+.pstat .num{font-size:22px;font-weight:900;color:#1F1535;}
+.pstat .lbl{font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;}
+
+/* THEME PICKER */
+.theme-section{padding:16px 16px 0;}
+.theme-section h3{font-size:14px;font-weight:900;color:#1F1535;margin-bottom:12px;}
+.theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:4px;}
+.theme-opt{border-radius:14px;height:52px;cursor:pointer;border:3px solid transparent;transition:all 0.2s;position:relative;}
+.theme-opt.active{border-color:#1F1535;transform:scale(1.05);}
+.theme-opt.active::after{content:'✓';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:16px;font-weight:900;text-shadow:0 1px 3px rgba(0,0,0,0.3);}
+
+.settings-list{padding:12px 16px;}
+.settings-group{background:var(--card);border-radius:18px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:12px;}
+.settings-item{display:flex;align-items:center;gap:12px;padding:15px 16px;border-bottom:1px solid #F9FAFB;cursor:pointer;transition:background 0.2s;}
+.settings-item:last-child{border-bottom:none;}
+.settings-item:hover{background:#FAFAFA;}
+.s-icon{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.s-text{flex:1;}
+.s-title{font-size:14px;font-weight:800;color:#1F1535;}
+.s-sub{font-size:11px;color:#9CA3AF;font-weight:600;}
+.s-arrow{color:#D1D5DB;font-size:18px;}
+.toggle-wrap{width:44px;height:24px;background:#E5E7EB;border-radius:100px;position:relative;cursor:pointer;transition:background 0.3s;flex-shrink:0;}
+.toggle-wrap.on{background:var(--theme-a);}
+.toggle-knob{width:20px;height:20px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:left 0.3s;box-shadow:0 1px 4px rgba(0,0,0,0.15);}
+.toggle-wrap.on .toggle-knob{left:22px;}
+.logout-btn{width:calc(100% - 32px);margin:0 16px 20px;padding:15px;background:#FEE2E2;border:none;border-radius:16px;color:#DC2626;font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;cursor:pointer;}
+
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center;z-index:100;opacity:0;pointer-events:none;transition:opacity 0.3s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{width:100%;max-width:390px;background:#fff;border-radius:28px 28px 0 0;padding:24px 24px 40px;transform:translateY(100%);transition:transform 0.4s cubic-bezier(.4,0,.2,1);max-height:90vh;overflow-y:auto;}
+.modal-overlay.open .modal{transform:translateY(0);}
+.modal-handle{width:40px;height:4px;background:#E5E7EB;border-radius:100px;margin:0 auto 20px;}
+.modal h3{font-size:20px;font-weight:900;color:#1F1535;margin-bottom:18px;}
+.input-group{margin-bottom:14px;}
+.input-group label{display:block;font-size:11px;font-weight:800;color:#6B7280;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px;}
+.input-group input,.input-group select{width:100%;padding:11px 15px;border:2px solid #E5E7EB;border-radius:13px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;color:#1F1535;outline:none;transition:border-color 0.2s;background:#fff;}
+.input-group input:focus,.input-group select:focus{border-color:var(--theme-a);}
+.emoji-picker{display:flex;gap:9px;flex-wrap:wrap;}
+.emoji-opt{width:42px;height:42px;border-radius:13px;border:2px solid #E5E7EB;background:#F9FAFB;font-size:21px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.emoji-opt.selected{border-color:var(--theme-a);background:#EDE9FE;transform:scale(1.1);}
+.color-picker{display:flex;gap:10px;}
+.color-opt{width:34px;height:34px;border-radius:50%;border:3px solid transparent;cursor:pointer;transition:transform 0.2s;}
+.color-opt.selected{border-color:#1F1535;transform:scale(1.15);}
+.modal-submit{width:100%;padding:15px;background:linear-gradient(135deg,var(--theme-a),var(--theme-b));border:none;border-radius:15px;color:#fff;font-family:'Nunito',sans-serif;font-size:16px;font-weight:900;cursor:pointer;margin-top:16px;box-shadow:0 8px 24px rgba(124,58,237,0.35);transition:transform 0.2s;}
+.modal-submit:hover{transform:translateY(-2px);}
+
+.center-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity 0.3s;}
+.center-modal-overlay.open{opacity:1;pointer-events:all;}
+.center-modal{width:90%;max-width:340px;background:#fff;border-radius:24px;padding:24px;transform:scale(0.9);transition:transform 0.3s;}
+.center-modal-overlay.open .center-modal{transform:scale(1);}
+.cm-h3{font-size:18px;font-weight:900;color:#1F1535;margin-bottom:16px;}
+.cm-input{width:100%;padding:11px 15px;border:2px solid #E5E7EB;border-radius:13px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;color:#1F1535;outline:none;margin-bottom:11px;}
+.cm-input:focus{border-color:var(--theme-a);}
+.cm-btns{display:flex;gap:10px;margin-top:4px;}
+.cm-cancel{flex:1;padding:12px;background:#F3F4F6;border:none;border-radius:12px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:#6B7280;cursor:pointer;}
+.cm-save{flex:1;padding:12px;background:var(--theme-a);border:none;border-radius:12px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:#fff;cursor:pointer;}
+
+/* TOAST */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#1F1535;color:#fff;padding:12px 22px;border-radius:100px;font-size:13px;font-weight:800;z-index:9999;transition:transform 0.4s cubic-bezier(.4,0,.2,1);white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* WEEKLY GOAL MODAL */
+.goal-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:4px;}
+.goal-opt{padding:12px 6px;background:#F3F4F6;border-radius:12px;text-align:center;cursor:pointer;border:2px solid transparent;transition:all 0.2s;}
+.goal-opt .g-num{font-size:22px;font-weight:900;color:#1F1535;}
+.goal-opt .g-lbl{font-size:10px;color:#9CA3AF;font-weight:700;}
+.goal-opt.selected{border-color:var(--theme-a);background:#EDE9FE;}
+.goal-opt.selected .g-num{color:var(--theme-a);}
+</style>
+</head>
+<body>
+<div class="phone">
+
+<!-- ══════════ HOME ══════════ -->
+<div class="screen active" id="screen-home">
+  <div class="topbar">
+    <div class="topbar-row">
+      <div>
+        <div class="greeting" id="homeGreeting">Xayrli kun! ☀️</div>
+        <div class="username" id="homeUsername">Foydalanuvchi</div>
+      </div>
+      <div class="streak-badge">🔥 <span id="streakCount">7</span> kun</div>
+    </div>
+    <div class="progress-section">
+      <div class="progress-label">
+        <span>Bugungi maqsad</span>
+        <span id="progressText">0 / 6</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="date-row" id="dateRow"></div>
+
+  <!-- WEEKLY GOAL -->
+  <div style="padding:0 16px 10px;">
+    <div class="weekly-goal-bar">
+      <div class="wg-icon">📅</div>
+      <div class="wg-info">
+        <div class="wg-title">Haftalik maqsad <span id="wgText">0 / 5 kun</span></div>
+        <div class="wg-bg"><div class="wg-fill" id="wgFill" style="width:0%"></div></div>
+      </div>
+      <div style="font-size:12px;font-weight:800;cursor:pointer;color:var(--theme-a);margin-left:8px;" onclick="openGoalModal()">✏️</div>
+    </div>
+  </div>
+
+  <!-- MOTIVATION -->
+  <div class="motivation-card" id="motivCard" onclick="nextMotiv()" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);">
+    <div class="motivation-icon" id="motivIcon">💪</div>
+    <div class="motivation-text" id="motivationText" style="color:#92400E;">Har bir qadam ulug' maqsad sari!</div>
+    <div class="motivation-next" style="color:#92400E;">›</div>
+  </div>
+
+  <div class="section-title">
+    <h2>Bugungi odatlar</h2>
+    <button class="add-btn" onclick="openModal()">+</button>
+  </div>
+  <div class="habits-list" id="habitsList"></div>
+</div>
+
+<!-- ══════════ STATS ══════════ -->
+<div class="screen" id="screen-stats">
+  <div class="page-header" style="background:linear-gradient(135deg,#F97316,#FBBF24);">
+    <div class="ph-label">📊 Statistika</div>
+    <h1>Rivojlanishing</h1>
+    <p>So'nggi 7 kunlik ko'rsatkichlar</p>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="big-num" style="color:#F97316;">🔥 <span id="s-streak">7</span></div>
+      <div class="big-label">Ketma-ket kun</div>
+    </div>
+    <div class="stat-card">
+      <div class="big-num" style="color:#7C3AED;"><span id="s-done">0</span>/<span id="s-total">6</span></div>
+      <div class="big-label">Bugun bajarildi</div>
+    </div>
+    <div class="stat-card wide">
+      <div>
+        <div class="big-num" style="color:#10B981;font-size:26px;" id="s-rate">72%</div>
+        <div class="big-label">Haftalik samaradorlik</div>
+      </div>
+      <div style="font-size:44px;">📈</div>
+    </div>
+  </div>
+  <div class="week-chart">
+    <h3>7 kunlik grafik</h3>
+    <div class="bars" id="weekBars"></div>
+  </div>
+  <div class="hp-section">
+    <h3>Odat bo'yicha taraqqiyot</h3>
+    <div id="habitProgressList"></div>
+  </div>
+</div>
+
+<!-- ══════════ ACHIEVEMENTS ══════════ -->
+<div class="screen" id="screen-ach">
+  <div class="page-header" style="background:linear-gradient(135deg,#3B82F6,#06B6D4);">
+    <div class="ph-label">🏆 Yutuqlar</div>
+    <h1>Medallaring</h1>
+    <p>Raqobatda o'z o'rningni bil!</p>
+  </div>
+  <div class="level-card">
+    <div class="level-row">
+      <div><div class="level-title">Joriy daraja</div><div class="level-num">⚡ Daraja 4</div></div>
+      <div style="text-align:right;"><div style="font-size:12px;opacity:0.8;">Keyingi</div><div style="font-size:20px;font-weight:900;">120 XP</div></div>
+    </div>
+    <div class="level-bar-bg"><div class="level-bar-fill" style="width:68%;"></div></div>
+    <div class="level-sub">68 / 100 XP to'plandi</div>
+  </div>
+
+  <!-- FRIENDS LEADERBOARD -->
+  <div class="friends-section" style="margin-top:14px;">
+    <h3>🤝 Do'stlar reytingi</h3>
+    <div id="friendsList"></div>
+  </div>
+
+  <div style="padding:0 16px 4px;"><div style="font-size:15px;font-weight:900;color:#1F1535;">🏅 Barcha medallар</div></div>
+  <div class="ach-grid" id="achGrid"></div>
+</div>
+
+<!-- ══════════ PROFILE ══════════ -->
+<div class="screen" id="screen-profile">
+  <div class="profile-header">
+    <div class="avatar" id="avatarDisplay">😊<div class="avatar-edit" onclick="openEditModal()">✏️</div></div>
+    <div class="profile-name" id="profileName">Foydalanuvchi</div>
+    <div class="profile-handle" id="profileHandle">@foydalanuvchi</div>
+  </div>
+  <div class="profile-stats">
+    <div class="pstat"><div class="num" id="p-done">47</div><div class="lbl">Bajarildi</div></div>
+    <div class="pstat"><div class="num" id="p-streak">7</div><div class="lbl">Streak 🔥</div></div>
+    <div class="pstat"><div class="num" id="p-habits">6</div><div class="lbl">Odatlar</div></div>
+  </div>
+
+  <!-- THEME -->
+  <div class="theme-section">
+    <h3>🎨 Rang mavzusi</h3>
+    <div class="theme-grid" id="themeGrid"></div>
+  </div>
+
+  <div class="settings-list">
+    <div style="font-size:12px;font-weight:800;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Sozlamalar</div>
+    <div class="settings-group">
+      <div class="settings-item" onclick="openEditModal()">
+        <div class="s-icon" style="background:#EDE9FE;">✏️</div>
+        <div class="s-text"><div class="s-title">Profilni tahrirlash</div><div class="s-sub">Ism va avatarni o'zgartirish</div></div>
+        <div class="s-arrow">›</div>
+      </div>
+      <div class="settings-item" onclick="openGoalModal()">
+        <div class="s-icon" style="background:#D1FAE5;">📅</div>
+        <div class="s-text"><div class="s-title">Haftalik maqsad</div><div class="s-sub" id="goalSubText">Haftada 5 kun bajarish</div></div>
+        <div class="s-arrow">›</div>
+      </div>
+      <div class="settings-item">
+        <div class="s-icon" style="background:#DBEAFE;">🔔</div>
+        <div class="s-text"><div class="s-title">Eslatmalar</div><div class="s-sub">Kunlik bildirishnomalar</div></div>
+        <div class="toggle-wrap on" id="notifToggle" onclick="this.classList.toggle('on')"><div class="toggle-knob"></div></div>
+      </div>
+      <div class="settings-item">
+        <div class="s-icon" style="background:#FEF3C7;">🌙</div>
+        <div class="s-text"><div class="s-title">Tungi rejim</div><div class="s-sub">Qorong'u mavzu</div></div>
+        <div class="toggle-wrap" id="darkToggle" onclick="this.classList.toggle('on')"><div class="toggle-knob"></div></div>
+      </div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-item">
+        <div class="s-icon" style="background:#FCE7F3;">📤</div>
+        <div class="s-text"><div class="s-title">Do'stga ulashish</div><div class="s-sub">Natijalarni ko'rsat</div></div>
+        <div class="s-arrow">›</div>
+      </div>
+      <div class="settings-item">
+        <div class="s-icon" style="background:#FEF3C7;">⭐</div>
+        <div class="s-text"><div class="s-title">Ilovani baholash</div><div class="s-sub">Play Market'da 5⭐ qo'y</div></div>
+        <div class="s-arrow">›</div>
+      </div>
+    </div>
+  </div>
+  <button class="logout-btn">🚪 Chiqish</button>
+</div>
+</div><!-- /phone -->
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="nav-item active" onclick="goTo('home',this)">
+    <div class="nav-icon">🏠</div><div class="nav-label">Asosiy</div><div class="nav-dot"></div>
+  </button>
+  <button class="nav-item" onclick="goTo('stats',this)">
+    <div class="nav-icon">📊</div><div class="nav-label">Statistika</div>
+  </button>
+  <button class="nav-item" onclick="goTo('ach',this)">
+    <div class="nav-icon">🏆</div><div class="nav-label">Yutuqlar</div>
+  </button>
+  <button class="nav-item" onclick="goTo('profile',this)">
+    <div class="nav-icon">👤</div><div class="nav-label">Profil</div>
+  </button>
+</div>
+
+<!-- ADD HABIT MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>➕ Yangi odat qo'shish</h3>
+    <div class="input-group"><label>Odat nomi</label><input type="text" id="habitNameInput" placeholder="Masalan: Sport qilish" maxlength="28"></div>
+    <div class="input-group"><label>Eslatma vaqti</label><input type="time" id="habitTimeInput" value="08:00"></div>
+    <div class="input-group"><label>Belgi tanlang</label>
+      <div class="emoji-picker" id="emojiPicker">
+        <div class="emoji-opt selected" data-emoji="🏃">🏃</div><div class="emoji-opt" data-emoji="📚">📚</div>
+        <div class="emoji-opt" data-emoji="💧">💧</div><div class="emoji-opt" data-emoji="🧘">🧘</div>
+        <div class="emoji-opt" data-emoji="🥗">🥗</div><div class="emoji-opt" data-emoji="✍️">✍️</div>
+        <div class="emoji-opt" data-emoji="🌙">🌙</div><div class="emoji-opt" data-emoji="💊">💊</div>
+      </div>
+    </div>
+    <div class="input-group"><label>Rang tanlang</label>
+      <div class="color-picker" id="colorPicker">
+        <div class="color-opt selected" data-color="c-purple" style="background:#7C3AED;"></div>
+        <div class="color-opt" data-color="c-pink"   style="background:#EC4899;"></div>
+        <div class="color-opt" data-color="c-orange" style="background:#F97316;"></div>
+        <div class="color-opt" data-color="c-green"  style="background:#10B981;"></div>
+        <div class="color-opt" data-color="c-blue"   style="background:#3B82F6;"></div>
+        <div class="color-opt" data-color="c-yellow" style="background:#F59E0B;"></div>
+      </div>
+    </div>
+    <button class="modal-submit" onclick="addHabit()">Qo'shish ✓</button>
+  </div>
+</div>
+
+<!-- WEEKLY GOAL MODAL -->
+<div class="center-modal-overlay" id="goalOverlay" onclick="if(event.target===this)closeGoalModal()">
+  <div class="center-modal">
+    <div class="cm-h3">📅 Haftalik maqsad</div>
+    <div style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:14px;">Haftada necha kun odat bajarasiz?</div>
+    <div class="goal-grid" id="goalGrid"></div>
+    <div class="cm-btns" style="margin-top:14px;">
+      <button class="cm-cancel" onclick="closeGoalModal()">Bekor</button>
+      <button class="cm-save" onclick="saveGoal()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PROFILE MODAL -->
+<div class="center-modal-overlay" id="editOverlay" onclick="if(event.target===this)closeEditModal()">
+  <div class="center-modal">
+    <div class="cm-h3">✏️ Profilni tahrirlash</div>
+    <div style="font-size:11px;font-weight:800;color:#6B7280;text-transform:uppercase;margin-bottom:6px;">Ism</div>
+    <input class="cm-input" type="text" id="editNameInput" placeholder="Ismingiz" maxlength="20">
+    <div style="font-size:11px;font-weight:800;color:#6B7280;text-transform:uppercase;margin-bottom:8px;">Avatar</div>
+    <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px;" id="avatarPicker">
+      <div class="emoji-opt selected" data-av="😊">😊</div><div class="emoji-opt" data-av="🦁">🦁</div>
+      <div class="emoji-opt" data-av="🐯">🐯</div><div class="emoji-opt" data-av="🦊">🦊</div>
+      <div class="emoji-opt" data-av="🐺">🐺</div><div class="emoji-opt" data-av="🦅">🦅</div>
+      <div class="emoji-opt" data-av="🌟">🌟</div><div class="emoji-opt" data-av="🔥">🔥</div>
+    </div>
+    <div class="cm-btns">
+      <button class="cm-cancel" onclick="closeEditModal()">Bekor</button>
+      <button class="cm-save" onclick="saveProfile()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════ DATA ══════════
+let habits = [
+  {id:1,name:"Ertalab yugurish",icon:"🏃",color:"c-purple",streak:12,time:"07:00",done:false},
+  {id:2,name:"Kitob o'qish",     icon:"📚",color:"c-pink",  streak:5, time:"20:00",done:false},
+  {id:3,name:"2L suv ichish",    icon:"💧",color:"c-blue",  streak:20,time:"Kunlik",done:false},
+  {id:4,name:"Meditatsiya",      icon:"🧘",color:"c-green", streak:3, time:"08:00",done:false},
+  {id:5,name:"Sog'lom ovqat",    icon:"🥗",color:"c-orange",streak:8, time:"12:00",done:false},
+  {id:6,name:"Kundalik yozish",  icon:"✍️",color:"c-yellow",streak:15,time:"22:00",done:false},
+];
+const weekData=[4,5,3,6,5,6,2];
+const dayNames=['Du','Se','Cho','Pa','Ju','Sha','Yak'];
+let totalDone=47, userName="Foydalanuvchi", selectedAvatar="😊";
+let selEmoji="🏃", selColor="c-purple";
+let weeklyGoal=5, weeklyDone=3;
+let motivIdx=0;
+
+const motivations=[
+  {icon:"💪",text:"Har bir qadam ulug' maqsad sari!",bg:"linear-gradient(135deg,#FEF3C7,#FDE68A)",tc:"#92400E"},
+  {icon:"🚀",text:"Bugun kecha siz bo'lganingizdan yaxshiroqsiz!",bg:"linear-gradient(135deg,#EDE9FE,#DDD6FE)",tc:"#5B21B6"},
+  {icon:"🌟",text:"Odatlar taqdirni belgilaydi!",bg:"linear-gradient(135deg,#D1FAE5,#A7F3D0)",tc:"#065F46"},
+  {icon:"🎯",text:"Kichik harakatlar, katta natijalar!",bg:"linear-gradient(135deg,#DBEAFE,#BFDBFE)",tc:"#1E40AF"},
+  {icon:"🏆",text:"Siz bunga mutlaqo loyiqsiz!",bg:"linear-gradient(135deg,#FCE7F3,#FBCFE8)",tc:"#9D174D"},
+];
+const themes=[
+  {name:"Binafsha",a:"#7C3AED",b:"#A855F7"},
+  {name:"Moviy",   a:"#2563EB",b:"#3B82F6"},
+  {name:"Yashil",  a:"#059669",b:"#10B981"},
+  {name:"Qizil",   a:"#DC2626",b:"#F97316"},
+  {name:"Pushti",  a:"#DB2777",b:"#EC4899"},
+  {name:"Ko'k",    a:"#0891B2",b:"#06B6D4"},
+  {name:"Limon",   a:"#D97706",b:"#F59E0B"},
+  {name:"Qora",    a:"#374151",b:"#6B7280"},
+];
+const colorMap={'c-purple':'#7C3AED','c-pink':'#EC4899','c-orange':'#F97316','c-green':'#10B981','c-blue':'#3B82F6','c-yellow':'#F59E0B'};
+const friends=[
+  {name:"Jasur",   av:"🦁",streak:24,score:980,me:false},
+  {name:"Kamola",  av:"🦊",streak:19,score:860,me:false},
+  {name:"Sen",     av:"😊",streak:7, score:720,me:true},
+  {name:"Dilnoza", av:"🌟",streak:5, score:540,me:false},
+  {name:"Bobur",   av:"🐯",streak:3, score:310,me:false},
+];
+const achievements=[
+  {icon:"🔥",name:"Birinchi qadam",  desc:"1 ta odat bajardingiz",  earned:true},
+  {icon:"⚡",name:"5 kun streak",    desc:"5 kun to'xtovsiz",        earned:true},
+  {icon:"🏅",name:"10 kun warrior",  desc:"10 kun ketma-ket",         earned:true},
+  {icon:"💎",name:"30 kun chempion", desc:"30 kun uzliksiz",          earned:false},
+  {icon:"🌟",name:"Perfektsionist",  desc:"Bir kunda 100% bajaring",  earned:false},
+  {icon:"🚀",name:"Yangi odat",      desc:"5 ta odat qo'shing",       earned:true},
+  {icon:"🎯",name:"Maqsad",          desc:"Haftalik maqsadga yeting", earned:false},
+  {icon:"👑",name:"Ustoz",           desc:"100 kun streak",           earned:false},
+];
+
+// ══════════ NAVIGATION ══════════
+function goTo(page,btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    n.classList.remove('active');
+    const d=n.querySelector('.nav-dot');
+    if(d)d.remove();
+  });
+  btn.classList.add('active');
+  const d=document.createElement('div');d.className='nav-dot';btn.appendChild(d);
+  if(page==='stats')renderStats();
+  if(page==='ach')renderAch();
+  if(page==='profile')renderProfile();
+}
+
+// ══════════ HOME ══════════
+function buildDateRow(){
+  const row=document.getElementById('dateRow');
+  const days=['Yak','Du','Se','Cho','Pa','Ju','Sha'];
+  const today=new Date();row.innerHTML='';
+  for(let i=-3;i<=3;i++){
+    const d=new Date(today);d.setDate(today.getDate()+i);
+    const c=document.createElement('div');
+    c.className='date-chip'+(i===0?' active':'')+(i<0?' has-dot':'');
+    c.innerHTML=`<span class="day-name">${days[d.getDay()]}</span><span class="day-num">${d.getDate()}</span>`;
+    row.appendChild(c);
+  }
+}
+
+function renderHabits(){
+  const list=document.getElementById('habitsList');
+  list.innerHTML='';
+  const done=habits.filter(h=>h.done).length;
+  const total=habits.length;
+  document.getElementById('progressText').textContent=`${done} / ${total}`;
+  document.getElementById('progressFill').style.width=(total?(done/total)*100:0)+'%';
+  document.getElementById('homeUsername').textContent=userName;
+  // greeting by time
+  const hr=new Date().getHours();
+  const g=hr<12?"Xayrli tong! 🌅":hr<17?"Xayrli kun! ☀️":hr<21?"Xayrli kech! 🌆":"Yaxshi tun! 🌙";
+  document.getElementById('homeGreeting').textContent=g;
+  // weekly goal
+  const wgPct=Math.min(100,Math.round((weeklyDone/weeklyGoal)*100));
+  document.getElementById('wgText').textContent=`${weeklyDone} / ${weeklyGoal} kun`;
+  document.getElementById('wgFill').style.width=wgPct+'%';
+
+  habits.forEach(h=>{
+    const card=document.createElement('div');
+    card.className=`habit-card ${h.color}${h.done?' done':''}`;
+    card.innerHTML=`
+      <div class="habit-icon-wrap">${h.icon}</div>
+      <div class="habit-info">
+        <div class="habit-name">${h.name}</div>
+        <div class="habit-meta">
+          <div class="habit-streak">🔥 ${h.streak} kun</div>
+          <div class="habit-time">⏰ ${h.time}</div>
+        </div>
+      </div>
+      <div class="check-btn">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+          <path d="M20 6L9 17l-5-5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>`;
+    card.addEventListener('click',()=>toggleHabit(h.id,card));
+    list.appendChild(card);
+  });
+}
+
+function toggleHabit(id,card){
+  const h=habits.find(x=>x.id===id);
+  h.done=!h.done;
+  if(h.done){h.streak++;totalDone++;spawnConfetti(card);showToast(h.icon+' '+h.name+' bajarildi! 🎉');}
+  else{h.streak=Math.max(0,h.streak-1);}
+  const allDone=habits.every(x=>x.done);
+  if(allDone){weeklyDone=Math.min(weeklyGoal,weeklyDone+1);showToast('🏆 Barcha odatlar bajarildi! Zo\'r!');}
+  renderHabits();
+}
+
+function spawnConfetti(card){
+  const rect=card.getBoundingClientRect();
+  const colors=['#7C3AED','#EC4899','#F97316','#10B981','#3B82F6','#F59E0B'];
+  for(let i=0;i<14;i++){
+    const el=document.createElement('div');el.className='confetti-piece';
+    el.style.cssText=`left:${rect.left+rect.width/2+((Math.random()-0.5)*100)}px;top:${rect.top+rect.height/2}px;background:${colors[Math.floor(Math.random()*colors.length)]};transform:rotate(${Math.random()*360}deg);animation-delay:${Math.random()*0.3}s;animation-duration:${0.7+Math.random()*0.5}s;`;
+    document.body.appendChild(el);setTimeout(()=>el.remove(),1200);
+  }
+}
+
+function nextMotiv(){
+  motivIdx=(motivIdx+1)%motivations.length;
+  const m=motivations[motivIdx];
+  const mc=document.getElementById('motivCard');
+  mc.style.background=m.bg;
+  document.getElementById('motivIcon').textContent=m.icon;
+  const mt=document.getElementById('motivationText');
+  mt.textContent=m.text;mt.style.color=m.tc;
+  document.querySelector('#motivCard .motivation-next').style.color=m.tc;
+}
+
+// ══════════ MODALS ══════════
+function openModal(){document.getElementById('modalOverlay').classList.add('open');document.getElementById('habitNameInput').focus();}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
+function addHabit(){
+  const name=document.getElementById('habitNameInput').value.trim();
+  if(!name)return;
+  const t=document.getElementById('habitTimeInput').value||'Kunlik';
+  habits.push({id:Date.now(),name,icon:selEmoji,color:selColor,streak:0,time:t,done:false});
+  document.getElementById('habitNameInput').value='';
+  closeModal();renderHabits();showToast('✅ Yangi odat qo\'shildi!');
+}
+
+document.getElementById('emojiPicker').addEventListener('click',e=>{
+  const o=e.target.closest('.emoji-opt');if(!o)return;
+  document.querySelectorAll('#emojiPicker .emoji-opt').forEach(x=>x.classList.remove('selected'));
+  o.classList.add('selected');selEmoji=o.dataset.emoji;
+});
+document.getElementById('colorPicker').addEventListener('click',e=>{
+  const o=e.target.closest('.color-opt');if(!o)return;
+  document.querySelectorAll('.color-opt').forEach(x=>x.classList.remove('selected'));
+  o.classList.add('selected');selColor=o.dataset.color;
+});
+
+// WEEKLY GOAL
+function openGoalModal(){
+  const grid=document.getElementById('goalGrid');grid.innerHTML='';
+  [3,4,5,6,7].forEach(n=>{
+    grid.innerHTML+=`<div class="goal-opt${n===weeklyGoal?' selected':''}" data-n="${n}" onclick="selectGoal(${n})">
+      <div class="g-num">${n}</div><div class="g-lbl">kun</div></div>`;
+  });
+  document.getElementById('goalOverlay').classList.add('open');
+}
+function selectGoal(n){
+  weeklyGoal=n;
+  document.querySelectorAll('.goal-opt').forEach(o=>{
+    o.classList.toggle('selected',parseInt(o.dataset.n)===n);
+  });
+}
+function closeGoalModal(){document.getElementById('goalOverlay').classList.remove('open');}
+function saveGoal(){
+  closeGoalModal();
+  document.getElementById('goalSubText').textContent=`Haftada ${weeklyGoal} kun bajarish`;
+  renderHabits();showToast(`📅 Haftalik maqsad: ${weeklyGoal} kun`);
+}
+
+// EDIT PROFILE
+function openEditModal(){
+  document.getElementById('editNameInput').value=userName;
+  document.getElementById('editOverlay').classList.add('open');
+}
+function closeEditModal(){document.getElementById('editOverlay').classList.remove('open');}
+function saveProfile(){
+  const n=document.getElementById('editNameInput').value.trim();
+  if(n)userName=n;
+  renderHabits();renderProfile();
+  closeEditModal();showToast('✅ Profil yangilandi!');
+}
+document.getElementById('avatarPicker').addEventListener('click',e=>{
+  const o=e.target.closest('[data-av]');if(!o)return;
+  document.querySelectorAll('#avatarPicker [data-av]').forEach(x=>x.classList.remove('selected'));
+  o.classList.add('selected');selectedAvatar=o.dataset.av;
+  document.getElementById('avatarDisplay').childNodes[0].textContent=selectedAvatar;
+});
+
+// ══════════ STATS ══════════
+function renderStats(){
+  const done=habits.filter(h=>h.done).length;
+  document.getElementById('s-done').textContent=done;
+  document.getElementById('s-total').textContent=habits.length;
+  document.getElementById('s-streak').textContent=document.getElementById('streakCount').textContent;
+  const total=weekData.reduce((a,b)=>a+b,0);
+  const rate=Math.round((total/(weekData.length*habits.length))*100);
+  document.getElementById('s-rate').textContent=Math.min(rate,100)+'%';
+  const barsEl=document.getElementById('weekBars');barsEl.innerHTML='';
+  const max=Math.max(...weekData,1);
+  const bc=['#7C3AED','#EC4899','#F97316','#10B981','#3B82F6','#F59E0B','#A855F7'];
+  weekData.forEach((v,i)=>{
+    const h=Math.round((v/max)*72)+4;
+    barsEl.innerHTML+=`<div class="bar-wrap"><div class="bar" style="height:${h}px;background:${bc[i]};"></div><div class="bar-label">${dayNames[i]}</div></div>`;
+  });
+  const pl=document.getElementById('habitProgressList');pl.innerHTML='';
+  habits.forEach(h=>{
+    const pct=Math.min(100,Math.round((h.streak/30)*100));
+    const color=colorMap[h.color]||'#7C3AED';
+    pl.innerHTML+=`<div class="hp-item">
+      <div class="hp-row"><div class="hp-name">${h.icon} ${h.name}</div><div class="hp-pct" style="color:${color};">${pct}%</div></div>
+      <div class="hp-bar-bg"><div class="hp-bar-fill" style="width:${pct}%;background:${color};"></div></div>
+    </div>`;
+  });
+}
+
+// ══════════ ACHIEVEMENTS ══════════
+function renderAch(){
+  // friends
+  const fl=document.getElementById('friendsList');fl.innerHTML='';
+  const sorted=[...friends].sort((a,b)=>b.score-a.score);
+  sorted.forEach((f,i)=>{
+    fl.innerHTML+=`<div class="friend-row${f.me?' me':''}">
+      <div class="friend-rank">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</div>
+      <div class="friend-av" style="background:${f.me?'#EDE9FE':'#F3F4F6'};">${f.av}</div>
+      <div class="friend-info">
+        <div class="friend-name">${f.name}${f.me?' (Sen)':''}</div>
+        <div class="friend-streak">🔥 ${f.streak} kun streak</div>
+      </div>
+      <div class="friend-score">${f.score} XP</div>
+    </div>`;
+  });
+  // medals
+  const grid=document.getElementById('achGrid');grid.innerHTML='';
+  achievements.forEach(a=>{
+    grid.innerHTML+=`<div class="ach-card${a.earned?'':' locked'}">
+      <div class="ach-icon">${a.icon}</div>
+      <div class="ach-name">${a.name}</div>
+      <div class="ach-desc">${a.desc}</div>
+      <span class="ach-badge ${a.earned?'earned':'locked-b'}">${a.earned?'✓ Qo\'lga kiritildi':'🔒 Qulflangan'}</span>
+    </div>`;
+  });
+}
+
+// ══════════ PROFILE + THEME ══════════
+function buildThemeGrid(){
+  const grid=document.getElementById('themeGrid');grid.innerHTML='';
+  themes.forEach((t,i)=>{
+    const el=document.createElement('div');
+    el.className='theme-opt'+(i===0?' active':'');
+    el.style.background=`linear-gradient(135deg,${t.a},${t.b})`;
+    el.title=t.name;
+    el.onclick=()=>applyTheme(t,el);
+    grid.appendChild(el);
+  });
+}
+
+function applyTheme(t,el){
+  document.querySelectorAll('.theme-opt').forEach(o=>o.classList.remove('active'));
+  el.classList.add('active');
+  document.documentElement.style.setProperty('--theme-a',t.a);
+  document.documentElement.style.setProperty('--theme-b',t.b);
+  document.documentElement.style.setProperty('--p',t.a);
+  document.documentElement.style.setProperty('--p2',t.b);
+  showToast('🎨 Mavzu o\'zgartirildi!');
+}
+
+function renderProfile(){
+  document.getElementById('profileName').textContent=userName;
+  document.getElementById('profileHandle').textContent='@'+userName.toLowerCase().replace(/\s+/g,'_');
+  document.getElementById('avatarDisplay').childNodes[0].textContent=selectedAvatar;
+  document.getElementById('p-done').textContent=totalDone;
+  document.getElementById('p-streak').textContent=document.getElementById('streakCount').textContent;
+  document.getElementById('p-habits').textContent=habits.length;
+  document.getElementById('goalSubText').textContent=`Haftada ${weeklyGoal} kun bajarish`;
+}
+
+// ══════════ TOAST ══════════
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ══════════ INIT ══════════
+buildDateRow();
+buildThemeGrid();
+renderHabits();
+</script>
+</body>
+</html>
